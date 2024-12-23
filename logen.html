@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logbook Generator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1, h2 {
+            text-align: center;
+            color: #333;
+        }
+
+        form {
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        input, textarea, select, button {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            box-sizing: border-box;
+            margin-top: 5px;
+        }
+
+        input[type="number"], input[type="date"], input[type="time"] {
+            font-family: Arial, sans-serif;
+        }
+
+        button {
+            background-color: #007bff;
+            color: #fff;
+            cursor: pointer;
+            border: none;
+            padding: 14px;
+            border-radius: 8px;
+            font-size: 16px;
+            margin-top: 15px;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        .preview {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border: 1px solid #ddd;
+        }
+
+        .preview p {
+            margin: 10px 0;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+
+        .form-group input, .form-group select, .form-group textarea {
+            font-size: 16px;
+            line-height: 1.5;
+        }
+
+        .logbook-entries {
+            margin-top: 20px;
+            background-color: #f1f1f1;
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .entry-buttons {
+            display: flex;
+            gap: 10px; 
+        }
+
+        .entry-buttons button {
+            background-color: #ff5722;
+            padding: 5px 10px; 
+            font-size: 14px; 
+            border-radius: 5px;
+            cursor: pointer;
+            width: 48%; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            line-height: 1;
+        }
+
+        .entry-buttons button .material-icons {
+            font-size: 16px; 
+        }
+
+        .entry-buttons button:hover {
+            background-color: #f44336;
+        }
+
+        .logbook-entries ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        .logbook-entries ul li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            cursor: move;
+        }
+
+        footer {
+            background-color: #f0f0f0;
+            text-align: center;
+            padding: 10px;
+            position: relative;
+            width: 100%;
+            bottom: 0;
+            font-size: 14px;
+            color: #777;
+            margin-top: auto;
+        }
+
+        footer a {
+            text-decoration: none;
+            color: #777;
+        }
+
+        footer a:hover {
+            color: #000;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Logbook Generator</h1>
+        <form id="logbookForm">
+            <div class="form-group">
+                <label for="hariKe">Hari Ke:</label>
+                <input type="number" id="hariKe" required>
+            </div>
+            <div class="form-group">
+                <label for="tanggal">Tanggal:</label>
+                <input type="date" id="tanggal" required>
+            </div>
+            <div class="form-group">
+                <label for="waktu">Waktu:</label>
+                <input type="time" id="waktu" required>
+            </div>
+            <div class="form-group">
+                <label for="kegiatan">Kegiatan:</label>
+                <input type="text" id="kegiatan" required>
+            </div>
+            <div class="form-group">
+                <label for="pemateri">Pemateri:</label>
+                <input type="text" id="pemateri">
+            </div>
+            <div class="form-group">
+                <label for="deskripsi">Deskripsi Kegiatan:</label>
+                <textarea id="deskripsi" rows="4" required></textarea>
+            </div>
+            <div class="form-group">
+                <label for="kendala">Kendala:</label>
+                <textarea id="kendala" rows="1"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="status">Status:</label>
+                <select id="status" required>
+                    <option value="Selesai">Selesai</option>
+                    <option value="Belum Selesai">Belum Selesai</option>
+                </select>
+            </div>
+            <button type="button" onclick="previewLogbook()">Tambahkan</button>
+        </form>
+
+        <div class="preview" id="previewSection" style="display: none;">
+            <h2>Tambahkan</h2>
+            <p id="previewContent"></p>
+            <button type="button" onclick="addToStack()">Tambahkan ke Daftar Logbook</button>
+        </div>
+
+        <div class="logbook-entries" id="logbookEntries">
+            <h2>Daftar Logbook</h2>
+            <ul id="entriesList"></ul>
+        </div>
+
+        <button type="button" id="downloadBtn" onclick="generatePDF()" disabled>Unduh PDF</button>
+    </div>
+
+    <footer>
+        Developed by <strong>Ramanda Putra</strong> <span>© 2024</span>
+    </footer>
+
+    <script>
+        let logbookStack = [];
+        let currentIndex = -1;
+
+        function previewLogbook() {
+            const hariKe = document.getElementById('hariKe').value.trim();
+            const tanggal = document.getElementById('tanggal').value.trim();
+            const waktu = document.getElementById('waktu').value.trim();
+            const kegiatan = document.getElementById('kegiatan').value.trim();
+            const pemateri = document.getElementById('pemateri').value.trim() || 'N/A';
+            const deskripsi = document.getElementById('deskripsi').value.trim();
+            const kendala = document.getElementById('kendala').value.trim() || 'N/A';
+            const status = document.getElementById('status').value.trim();
+
+            if (!hariKe || !tanggal || !waktu || !kegiatan || !deskripsi || !status) {
+                alert("Harap lengkapi semua field yang wajib diisi.");
+                return;
+            }
+
+            const previewContent = `
+                <strong>Hari Ke:</strong> ${hariKe} <br>
+                <strong>Tanggal:</strong> ${tanggal} <br>
+                <strong>Waktu:</strong> ${waktu} <br>
+                <strong>Kegiatan:</strong> ${kegiatan} <br>
+                <strong>Pemateri:</strong> ${pemateri} <br>
+                <strong>Deskripsi:</strong> ${deskripsi} <br>
+                <strong>Kendala:</strong> ${kendala} <br>
+                <strong>Status:</strong> ${status}
+            `;
+            document.getElementById('previewContent').innerHTML = previewContent;
+            document.getElementById('previewSection').style.display = 'block';
+        }
+
+        function addToStack() {
+            const hariKe = document.getElementById('hariKe').value;
+            const tanggal = document.getElementById('tanggal').value;
+            const waktu = document.getElementById('waktu').value;
+            const kegiatan = document.getElementById('kegiatan').value;
+            const pemateri = document.getElementById('pemateri').value || 'N/A';
+            const deskripsi = document.getElementById('deskripsi').value;
+            const kendala = document.getElementById('kendala').value || 'N/A';
+            const status = document.getElementById('status').value;
+
+            const entry = {
+                hariKe,
+                tanggal,
+                waktu,
+                kegiatan,
+                pemateri,
+                deskripsi,
+                kendala,
+                status,
+            };
+
+            if (currentIndex === -1) {
+                logbookStack.push(entry);
+            } else {
+                logbookStack[currentIndex] = entry;
+                currentIndex = -1;
+            }
+
+            updateEntriesList();
+            document.getElementById('downloadBtn').disabled = false;
+            document.getElementById('logbookForm').reset();
+            document.getElementById('previewSection').style.display = 'none';
+        }
+
+        function updateEntriesList() {
+            const entriesList = document.getElementById('entriesList');
+            entriesList.innerHTML = '';
+
+            logbookStack.forEach((entry, index) => {
+                const li = document.createElement('li');
+                li.setAttribute('draggable', true);  
+                li.setAttribute('data-index', index); 
+
+                li.innerHTML = `
+                    <span>${entry.hariKe} - ${entry.kegiatan}</span>
+                    <div class="entry-buttons">
+                        <button onclick="editEntry(${index})">
+                            <span class="material-icons">edit</span> Edit
+                        </button>
+                        <button onclick="removeEntry(${index})">
+                            <span class="material-icons">delete</span> Remove
+                        </button>
+                    </div>
+                `;
+
+                li.addEventListener('dragstart', handleDragStart);
+                li.addEventListener('dragover', handleDragOver);
+                li.addEventListener('drop', handleDrop);
+
+                entriesList.appendChild(li);
+            });
+        }
+
+        function handleDragStart(event) {
+            event.dataTransfer.setData('text', event.target.dataset.index);
+        }
+
+        function handleDragOver(event) {
+            event.preventDefault(); 
+        }
+
+        function handleDrop(event) {
+            event.preventDefault();
+            const draggedIndex = event.dataTransfer.getData('text');
+            const targetIndex = event.target.closest('li').dataset.index;
+
+            if (draggedIndex !== targetIndex) {
+                reorderEntries(draggedIndex, targetIndex);
+            }
+        }
+
+        function reorderEntries(fromIndex, toIndex) {
+            const [movedEntry] = logbookStack.splice(fromIndex, 1);
+            logbookStack.splice(toIndex, 0, movedEntry);
+            updateEntriesList();
+        }
+
+        function editEntry(index) {
+            const entry = logbookStack[index];
+            document.getElementById('hariKe').value = entry.hariKe;
+            document.getElementById('tanggal').value = entry.tanggal;
+            document.getElementById('waktu').value = entry.waktu;
+            document.getElementById('kegiatan').value = entry.kegiatan;
+            document.getElementById('pemateri').value = entry.pemateri;
+            document.getElementById('deskripsi').value = entry.deskripsi;
+            document.getElementById('kendala').value = entry.kendala;
+            document.getElementById('status').value = entry.status;
+
+            currentIndex = index;
+            document.getElementById('previewSection').style.display = 'none';
+        }
+
+        function removeEntry(index) {
+            logbookStack.splice(index, 1);
+            updateEntriesList();
+
+            if (logbookStack.length === 0) {
+                document.getElementById('downloadBtn').disabled = true;
+            }
+        }
+
+        function generatePDF() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('p', 'mm', 'a4');  
+        doc.setFont("Arial", "normal");
+        doc.setFontSize(12);
+
+        const leftMargin = 15;
+        const topMargin = 20;
+        const rightMargin = 195; 
+        const bottomMargin = 277; 
+
+        let yPosition = topMargin;
+        const entriesPerPage = 2; 
+        let entryCount = 0;
+
+        const gap = 10; 
+
+        logbookStack.forEach((entry, index) => {
+            if (entryCount >= entriesPerPage) {
+                doc.addPage(); 
+                yPosition = topMargin; 
+                entryCount = 0; 
+            }
+
+            doc.setFont("Arial", "normal");
+            doc.text(`Hari Ke    : ${entry.hariKe}`, leftMargin, yPosition);
+            yPosition += gap;
+
+            doc.setFont("Arial", "normal");
+            doc.text(`Tanggal    : ${entry.tanggal}`, leftMargin, yPosition);
+            yPosition += gap;
+
+            doc.text(`Waktu      : ${entry.waktu}`, leftMargin, yPosition);
+            yPosition += gap;
+
+            doc.text(`Kegiatan   : ${entry.kegiatan}`, leftMargin, yPosition);
+            yPosition += gap;
+
+            doc.text(`Pemateri   : ${entry.pemateri}`, leftMargin, yPosition);
+            yPosition += gap;
+
+            doc.setFont("Arial", "normal");
+            doc.text("Deskripsi Kegiatan :", leftMargin, yPosition);
+            yPosition += gap;
+
+            doc.setFont("Arial", "normal");
+            const deskripsiLines = doc.splitTextToSize(entry.deskripsi, rightMargin - leftMargin);
+            doc.text(deskripsiLines, leftMargin, yPosition);
+            yPosition += deskripsiLines.length * 5 + 0; 
+
+            doc.text(`Kendala    : ${entry.kendala}`, leftMargin, yPosition);
+            yPosition += gap;
+
+            doc.text(`Status     : ${entry.status}`, leftMargin, yPosition);
+            yPosition;
+
+            yPosition += 5;
+            doc.line(leftMargin, yPosition, rightMargin, yPosition);
+            yPosition += 5;
+            
+            entryCount++; 
+
+            if (yPosition > bottomMargin && index < logbookStack.length - 1) {
+                doc.addPage();
+                yPosition = topMargin;
+                entryCount = 0;
+            }
+        });
+
+        doc.save("logbook.pdf");
+    }
+
+    </script>
+</body>
+</html>
